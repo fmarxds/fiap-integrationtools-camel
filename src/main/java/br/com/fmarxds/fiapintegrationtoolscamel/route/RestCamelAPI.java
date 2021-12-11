@@ -21,13 +21,16 @@ public class RestCamelAPI extends RouteBuilder {
     @Value("${baeldung.api.path}")
     private String contextPath;
 
+    private static final String DIRECT_REMOTE_SERVICE = "direct:remoteService";
+
     @Override
     public void configure() throws Exception {
 
         CamelContext context = new DefaultCamelContext();
 
         // http://localhost:8080/camel/api-doc
-        restConfiguration().contextPath(contextPath)
+        restConfiguration()
+                .contextPath(contextPath)
                 .port(serverPort)
                 .enableCORS(true)
                 .apiContextPath("/api-doc")
@@ -39,17 +42,18 @@ public class RestCamelAPI extends RouteBuilder {
                 .bindingMode(RestBindingMode.json)
                 .dataFormatProperty("prettyPrint", "true");
 
-        rest("/api/").description("Teste REST Service")
+        rest("/api/")
                 .id("api-route")
+                .description("Teste REST Service")
                 .post("/bean")
                 .produces(MediaType.APPLICATION_JSON)
                 .consumes(MediaType.APPLICATION_JSON)
                 .bindingMode(RestBindingMode.auto)
                 .type(MyBean.class)
                 .enableCORS(true)
-                .to("direct:remoteService");
+                .to(DIRECT_REMOTE_SERVICE);
 
-        from("direct:remoteService").routeId("direct-route")
+        from(DIRECT_REMOTE_SERVICE).routeId("direct-route")
                 .tracing()
                 .log(">>> INCOMING: ${body.id}: ${body.name}")
                 .process(exchange -> {
